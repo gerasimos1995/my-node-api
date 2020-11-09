@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
-const { authenticateToken } = require('../util/jwt.js');
+const { authenticateToken, roleAuthentication } = require('../util/jwt.js');
 
 // Importing the model
 const userModel = require('../models/user.js');
+const { ROLES } = require('../models/roles.js');
 
 // Create new user entry
 router.post('/', authenticateToken ,async (req, res) => {
@@ -25,7 +26,7 @@ router.post('/', authenticateToken ,async (req, res) => {
 });
 
 //Get all users 
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, roleAuthentication([ROLES.SUPERADMIN, ROLES.ADMIN]), async (req, res) => {
     try {
         const data = await userModel.find();
         return res.status(200).send(data);

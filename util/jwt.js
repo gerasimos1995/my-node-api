@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 
-// Middlware
+// Auth Middlware
 exports.authenticateToken = (req, res, next) => {
+    console.log("Hey i am in the auth middleware");
     const authHeader = req.headers['authorization'];
     
     const token = authHeader && authHeader.split(' ')[1];
@@ -15,11 +16,28 @@ exports.authenticateToken = (req, res, next) => {
     });
 }
 
+// Roles Middleware
+exports.roleAuthentication = (role) => {
+    return (req, res, next) => {
+        console.log("Hey i am in the role middleware");
+        console.log("Role required: ", role);
+        const authHeader = req.headers['authorization'];
+    
+        const token = authHeader && authHeader.split(' ')[1];
+        var decoded = jwt.decode(token);
+
+        if (!role.includes(decoded.role)){
+            res.status(401).json({ message: "You do not have the permission for this action" });
+        }
+        next();
+    }
+}
+
 // Helper function
 exports.generateAccessToken = (user) => {
     try {
         // The token returned has all the user's information
-        return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20s'});
+        return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m'});
     } catch (error) {
         console.error(error);
         return null;
