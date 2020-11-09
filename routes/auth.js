@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { registerValidator, loginValidator } = require('../util/validators.js');
 const jwt = require('jsonwebtoken');
-const { generateAccessToken, generateRefreshToken } = require('../util/jwt.js');
+const { generateAccessToken, generateRefreshToken, authenticateToken } = require('../util/jwt.js');
 
 // Importing the model
 const userModel = require('../models/user.js');
@@ -33,13 +33,18 @@ router.post('/register', async (req, res) => {
             email: req.body.email
         });
 
-        const savedUser = await user.save();
-        // Not returning the hashed password as best practise
-        res.status(201).send({
-            id: savedUser._id,
-            username: savedUser.username,
-            email: savedUser.email
-        });
+        try {
+            const savedUser = await user.save();
+            // Not returning the hashed password as best practise
+            res.status(201).send({
+                id: savedUser._id,
+                username: savedUser.username,
+                email: savedUser.email
+            });
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ message: "Something went wrong with saving user in database" });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: `Error occured while saving user: ${err}` })
@@ -64,23 +69,24 @@ router.post('/login', async (req, res) => {
         // const nuser = { id: user._id,
         //                 username: user.username,
         //                 email: user.email };
-        const nuser = { username: user.username };
-        const access_token = generateAccessToken(nuser);
-        const refresh_token = generateRefreshToken(nuser);
-        console.log(access_token, "\n\n\n", refresh_token );
+        const temp_user = { username: user.username };
+        const access_token = generateAccessToken(temp_user);
+        const refresh_token = generateRefreshToken(temp_user);
+        if (!access_token || !refresh_token) return res.status(500).json({ message: "Error creating access/refresh tokens" });
+
+        // Saving the refresh token created in the database along with the username of user
         try {
             const refresh_token_db = new tokenModel({
                 token: refresh_token,
-                username: nuser.username
+                username: temp_user.username
             });
-
             await refresh_token_db.save();
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Failure saving refresh token" });
         }
-        return res.header('Authorization', `Bearer ${access_token}`)
-                .json({ AccessToken: access_token, RefreshToken: refresh_token });
+        res.header('Authorization', `Bearer ${access_token}`)
+            .json({ AccessToken: access_token, RefreshToken: refresh_token });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: error });
@@ -94,39 +100,56 @@ router.post('/token', async (req, res, next) => {
     
     var decoded = jwt.decode(refreshToken);
     try {
+        // Find if the user provided in the refresh token has an active refresh token in database
         const rfrsh_tk = await tokenModel.findOne({ username: decoded.username });
         
-        // There is no refresh token created for user
-        if (!rfrsh_tk) return  res.status(403).json({ message: "There is no refrest token issued to this user"});
+        // There is no refresh token in the database for user
+        if (!rfrsh_tk) return  res.status(403).json({ message: "There is no refresh token issued to this user"});
 
+        if (rfrsh_tk.token != req.body.refreshToken) return res.status(403)
+                    .json({ message: "The refresh token you provided does not correspond to the one found in database" });
+        // There is a refresh token in db, verify it and then generate a new access token
         jwt.verify(rfrsh_tk.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
             if (err) return res.status(403).json({ message: "Error while verifying refresh token"});
             // User has valid refresh token issued to him so we can create a new access token
-            const accessToken = generateAccessToken(user);
-            return res.json({ AccessToken: accessToken });
+            const temp_user = { username: decoded.username };
+            const accessToken = generateAccessToken(temp_user);
+            if (!accessToken) return res.status(500).json({ message: "Error creating access token" });
+            return res.status(201).json({ AccessToken: accessToken });
         });
     } catch (error) {
         console.error(error);
         if (error.message == "Cannot read property 'username' of null"){ 
             return res.status(400).json({ message: "The provided token didn't match any in the database"});
         } else {
-            return res.status(500).json({ message: "Server error during token generatio" });
+            return res.status(500).json({ message: "Server error during token generation" });
         }
     }
 });
 
 // Deleting a refresh token from the database
 router.post('/token/disable', async function (req, res, next) {
-    var refreshToken  = req.body.refreshToken;
-    var decoded = jwt.decode(refreshToken);
-    console.log(decoded);
+    const refreshToken  = req.body.refreshToken;
+        
     try {
         const rfrsh_tk = await tokenModel.deleteOne({ token: refreshToken });
-        return res.sendStatus(204);
+        console.log("Deleted token: ", rfrsh_tk);
+        res.sendStatus(204);
     } catch (error) {
         console.error(error);
         return res.sendStatus(500);
     }
-})
+});
 
+// 
+router.post('/logout', authenticateToken, async (req, res) => {
+    try {
+        const token = await tokenModel.deleteOne({ username: req.user.username});
+        console.log(token);
+        res.sendStatus(204);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ message: "Could not find a refresh token issued to this user" });
+    }
+});
 module.exports = router
