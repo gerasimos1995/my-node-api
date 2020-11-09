@@ -1,3 +1,4 @@
+const { ROLES } = require('./roles.js');
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -37,6 +38,11 @@ const userSchema = new mongoose.Schema({
     address: {
         type: String,
         default: null
+    },
+    role: {
+        type: String,
+        enum: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.USER],
+        default: ROLES.USER
     }
 });
 
