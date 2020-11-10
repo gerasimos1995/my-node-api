@@ -37,7 +37,7 @@ exports.roleAuthentication = (role) => {
 exports.generateAccessToken = (user) => {
     try {
         // The token returned has all the user's information
-        return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m'});
+        return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m'});
     } catch (error) {
         console.error(error);
         return null;

@@ -1,4 +1,4 @@
-const { ROLES } = require('./roles.js');
+const { ROLES } = require('./role.js');
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({

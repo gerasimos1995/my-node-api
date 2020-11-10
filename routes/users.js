@@ -5,10 +5,10 @@ const { authenticateToken, roleAuthentication } = require('../util/jwt.js');
 
 // Importing the model
 const userModel = require('../models/user.js');
-const { ROLES } = require('../models/roles.js');
+const { ROLES } = require('../models/role.js');
 
 // Create new user entry
-router.post('/', authenticateToken ,async (req, res) => {
+router.post('/', authenticateToken, roleAuthentication([ROLES.SUPERADMIN, ROLES.ADMIN]), async (req, res) => {
     const user = new userModel({
         username: req.body.username,
         password: req.body.password,
