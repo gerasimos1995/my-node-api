@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.USER],
+        enum: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.USER, ROLES.SHOP_OWNER, ROLES.CLIENT],
         default: ROLES.USER
     }
 });

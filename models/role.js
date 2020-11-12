@@ -2,7 +2,8 @@ module.exports.ROLES = {
     SUPERADMIN: 'superadmin',
     ADMIN: 'admin',
     USER: 'user',
-    CLIENT: 'client'
+    CLIENT: 'client',
+    SHOP_OWNER: 'shop_owner'
 };
 
 // This didn't work as expected

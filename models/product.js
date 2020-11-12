@@ -16,7 +16,8 @@ const productSchema = new mongoose.Schema({
     provider: {
         type: String,
         default: "Random Shop"
-    }
+    },
+    trader: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 
 module.exports = mongoose.model('Product', productSchema);

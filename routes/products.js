@@ -1,11 +1,38 @@
 const express = require('express');
 const router = express.Router();
 
+const { authenticateToken, roleAuthentication } = require('../util/jwt.js');
+
 const { productValidator } = require('../util/validators.js');
 
 const productModel = require('../models/product.js');
+const { ROLES } = require('../models/role.js');
 
-router.get('/:id', async (req, res) => {
+const { scopedProducts } = require('../permissions/product.js');
+
+router.get('/', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER, ROLES.CLIENT), async (req, res) => {
+
+    try {
+        const data = await productModel.find({ });
+        if (!data) return res.status(400).json({ message: "No products were found" });
+
+        // If the user is shop owner return only the products he had created
+        if (req.user.role === ROLES.SHOP_OWNER){
+            const filtered_products = await scopedProducts(req.user, data);
+            //console.log("In router: ", filtered_products);
+            if (!filtered_products) return res.status(400).json({ message: "No products found for the logged in user" });
+            return res.status(200).json({ products: filtered_products });
+        }
+
+        // The user is a client so return all the products found
+        return res.status(200).json({ products: data });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: error.message });
+    }
+});
+
+router.get('/:id', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER, ROLES.CLIENT), async (req, res) => {
     const product_id = req.params.id;
 
     try {
@@ -19,7 +46,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async (req, res) => {
     // Checking if the provided product has the appropriate information
     const { error } = productValidator(req.body);
     if (error) return res.status(400).json({ message: error.details[0].message });
@@ -30,7 +57,8 @@ router.post('/', async (req, res) => {
             category: req.body.category,
             title: req.body.title,
             price: req.body.price,
-            provider: req.body.provider
+            provider: req.body.provider,
+            trader: req.user.id
         });
 
         const data = await product.save();
@@ -43,7 +71,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async (req, res) => {
     // Checking if the provided product has the appropriate information
     const { error } = productValidator(req.body);
     if (error) return res.status(400).json({ message: error.details[0].message });
@@ -68,7 +96,7 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async (req, res) => {
     // Checking if the requested product for update exists in database
     const product_id = req.params.id;
     const product = await productModel.findOne({ _id : product_id });

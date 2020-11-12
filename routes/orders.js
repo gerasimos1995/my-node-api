@@ -6,29 +6,53 @@ const { orderValidator } = require('../util/validators.js');
 const orderModel = require('../models/order.js');
 const productModel = require('../models/product.js');
 const userModel = require('../models/user.js');
+const { ROLES } = require('../models/role.js');
 
-router.get('/:id', async (req, res) => {
-    const order_id = req.params.id;
+const { authenticateToken, roleAuthentication } = require('../util/jwt.js');
+const { getSpecificOrder, authGetOrder, scopedOrders } = require('../permissions/order.js');
 
+// Get all the orders of the logged in user
+router.get('/', authenticateToken, roleAuthentication(ROLES.CLIENT, ROLES.ADMIN), async (req, res) => {
     try {
-        const data = await orderModel.findOne({ _id : order_id });
-        if (!data) return res.status(400).json({ message: "Order was not found" });
-        return res.status(200).json({ order: data });
+        const data = await orderModel.find({ });
+        if (!data) return res.status(400).json({ message: "No orders were found" });
+
+        // If the user is client return only the orders he had created
+        if (req.user.role == ROLES.CLIENT){
+            const filtered_orders = await scopedOrders(req.user, data);
+            //console.log("In router: ", filtered_orders);
+            if (!filtered_orders) return res.status(400).json({ message: "No orders found for the logged in user" });
+            return res.status(200).json({ orders: filtered_orders });
+        }
+
+        // The user is an admin so return all the orders found
+        return res.status(200).json({ orders: data });
     } catch (error) {
         console.error(error);
-        // That occurs if the id given has wrong length (most likely)
         return res.status(500).json({ message: error.message });
     }
 });
 
-router.post('/:id', async (req, res) => {
+router.get('/:id', authenticateToken, roleAuthentication(ROLES.CLIENT),
+            getSpecificOrder, authGetOrder, async (req, res) => {
+
+    // This one calls two middlewares to get the order requested
+    // then the result is passed to the request body in to the next middleware 
+    // where I check if the user requested to see the order is the 
+    // user that made the order
+    res.json(req.order);
+});
+
+router.post('/', authenticateToken, roleAuthentication(ROLES.CLIENT), async (req, res) => {
     // Validate that data is in proper format
     const { error } = orderValidator(req.body);
     if (error) return res.status(400).json({ message: error.details[0].message });
 
-    // Check if the user given as client exists
-    const data = await userModel.findOne({ _id : req.body.client });
-    if (!data) return res.status(400).json({ message: `The user ${req.body.client} does not exist` });
+    // Removed this because user logged in already exists
+    // I was giving the client in the body but he exists already in req.user
+
+    //const data = await userModel.findOne({ _id : req.body.client });
+    //if (!data) return res.status(400).json({ message: `The user ${req.body.client} does not exist` });
 
     const products = req.body.products;
 
@@ -47,7 +71,7 @@ router.post('/:id', async (req, res) => {
 
         try {
             const order = new orderModel({
-                client: req.body.client,
+                client: req.user.id,
                 products: req.body.products
             });
     
@@ -62,6 +86,9 @@ router.post('/:id', async (req, res) => {
     }
     start();
 });
+
+
+
 
 module.exports = router;
 
