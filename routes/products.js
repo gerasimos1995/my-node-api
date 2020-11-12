@@ -2,37 +2,26 @@ const express = require('express');
 const router = express.Router();
 
 const { authenticateToken, roleAuthentication } = require('../util/jwt.js');
+const { paginatedResults } = require('../util/pagination.js');
 
 const { productValidator } = require('../util/validators.js');
 
 const productModel = require('../models/product.js');
 const { ROLES } = require('../models/role.js');
 
-const { scopedProducts } = require('../permissions/product.js');
+const { getProducts } = require('../permissions/product.js');
 
-router.get('/', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER, ROLES.CLIENT), async (req, res) => {
-
-    try {
-        const data = await productModel.find({ });
-        if (!data) return res.status(400).json({ message: "No products were found" });
-
-        // If the user is shop owner return only the products he had created
-        if (req.user.role === ROLES.SHOP_OWNER){
-            const filtered_products = await scopedProducts(req.user, data);
-            //console.log("In router: ", filtered_products);
-            if (!filtered_products) return res.status(400).json({ message: "No products found for the logged in user" });
-            return res.status(200).json({ products: filtered_products });
-        }
-
-        // The user is a client so return all the products found
-        return res.status(200).json({ products: data });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: error.message });
-    }
+router.get('/', authenticateToken, roleAuthentication([ROLES.SHOP_OWNER, ROLES.CLIENT]),
+            getProducts, async (req, res) => {
+        return res.status(200).json({ products: req.products, no_products: req.products.length });
 });
 
-router.get('/:id', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER, ROLES.CLIENT), async (req, res) => {
+router.get('/paginated', authenticateToken, roleAuthentication([ROLES.ADMIN, ROLES.CLIENT]),
+            paginatedResults(productModel), (req, res) => {
+                res.json(res.paginatedResults);
+})
+
+router.get('/:id', authenticateToken, roleAuthentication([ROLES.SHOP_OWNER, ROLES.CLIENT]), async (req, res) => {
     const product_id = req.params.id;
 
     try {
