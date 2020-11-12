@@ -30,7 +30,8 @@ router.post('/register', async (req, res) => {
         const user = new userModel({
             username: req.body.username,
             password: hashedPassword,
-            email: req.body.email
+            email: req.body.email,
+            role: req.body.role
         });
 
         try {
@@ -39,7 +40,8 @@ router.post('/register', async (req, res) => {
             res.status(201).send({
                 id: savedUser._id,
                 username: savedUser.username,
-                email: savedUser.email
+                email: savedUser.email,
+                role: savedUser.role
             });
         } catch (error) {
             console.log(error);
@@ -69,7 +71,7 @@ router.post('/login', async (req, res) => {
         // const nuser = { id: user._id,
         //                 username: user.username,
         //                 email: user.email };
-        const temp_user = { username: user.username, role: user.role };
+        const temp_user = { username: user.username, role: user.role, id: user._id };
         const access_token = generateAccessToken(temp_user);
         const refresh_token = generateRefreshToken(temp_user);
         if (!access_token || !refresh_token) return res.status(500).json({ message: "Error creating access/refresh tokens" });
@@ -112,7 +114,7 @@ router.post('/token', async (req, res, next) => {
         jwt.verify(rfrsh_tk.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
             if (err) return res.status(403).json({ message: "Error while verifying refresh token"});
             // User has valid refresh token issued to him so we can create a new access token
-            const temp_user = { username: decoded.username, role: decoded.role };
+            const temp_user = { username: decoded.username, role: decoded.role, id: user.id };
             const accessToken = generateAccessToken(temp_user);
             if (!accessToken) return res.status(500).json({ message: "Error creating access token" });
             return res.status(201).json({ AccessToken: accessToken });
