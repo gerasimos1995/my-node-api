@@ -4,16 +4,16 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function Signup() {
 
-    const usernameRef = useRef();
-    const emailRef = useRef();
-    const passwordRef = useRef();
-    const passwordConfirmRef = useRef();
-    const roleRef = useRef();
+    const usernameRef = useRef()
+    const emailRef = useRef()
+    const passwordRef = useRef()
+    const passwordConfirmRef = useRef()
+    const roleRef = useRef()
 
-    const { signup, currentUser, signupError } = useAuth();
+    const { signup, signupError, returnMessage } = useAuth()
 
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
 
     async function handleSubmit(e) {
         e.preventDefault() // page doesn't refresh
@@ -45,8 +45,8 @@ export default function Signup() {
             <Card>
                 <Card.Body>
                     <h2 className="text-center mb-4">Sign Up</h2>
-                    {currentUser && currentUser.email}
                     {error && <Alert variant="danger">{error}</Alert>}
+                    {returnMessage && <Alert variant="success">{returnMessage}</Alert>}
                     <Form onSubmit={ handleSubmit }>
                         <Form.Group id="username">
                             <Form.Label>Username</Form.Label>
