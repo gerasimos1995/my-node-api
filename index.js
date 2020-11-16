@@ -1,11 +1,20 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
 // Middlewares
-app.use(express.json()); //body-parser for json
+// app.use((req, res, next) => {
+//     console.log("Inside cors middlware");
+//     res.header('Access-Control-Allow-Origin', '*');
+//     res.header('Access-Control-Allow-Headers', '*');
+//     res.header('Access-Control-Allow-Methods', 'PUT, POST, PATCH, DELETE, GET')
+//     next();
+// }); 
+app.use(cors()); // to avoid cors issue 
+app.use(express.json()); // body-parser for json
 app.use(express.urlencoded({ extended: true })); // body-parser for xwww-form-urlencoded
 var multer = require('multer');
 var upload = multer();
