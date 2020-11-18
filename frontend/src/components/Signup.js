@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Form, Button, Card, Alert } from 'react-bootstrap'
 import { useAuth } from '../contexts/AuthContext'
+import { Link, useHistory } from 'react-router-dom'
 
 export default function Signup() {
 
@@ -15,6 +16,8 @@ export default function Signup() {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
+    const history = useHistory()
+
     async function handleSubmit(e) {
         e.preventDefault() // page doesn't refresh
 
@@ -25,10 +28,12 @@ export default function Signup() {
         try {
             setError('')
             setLoading(true)
-            await signup(usernameRef.current.value, 
+            const rtrMsg = await signup(usernameRef.current.value, 
                 emailRef.current.value,
                 passwordRef.current.value,
                 roleRef.current.value)
+             
+            //if (rtrMsg && (rtrMsg === "Success")) history.push('/login')
         } catch (error) {
             setError('Failed to create an account')
         }
@@ -46,7 +51,7 @@ export default function Signup() {
                 <Card.Body>
                     <h2 className="text-center mb-4">Sign Up</h2>
                     {error && <Alert variant="danger">{error}</Alert>}
-                    {returnMessage && <Alert variant="success">{returnMessage}</Alert>}
+                    {/* {returnMessage && <Alert variant="success">{returnMessage}</Alert>} */}
                     <Form onSubmit={ handleSubmit }>
                         <Form.Group id="username">
                             <Form.Label>Username</Form.Label>
@@ -73,7 +78,7 @@ export default function Signup() {
                 </Card.Body>
             </Card>
             <div className="w-100 text-center mt-2">
-                Already have an account? Log In
+                Already have an account? <Link to="/login">Log In</Link>
             </div>
         </>
     )

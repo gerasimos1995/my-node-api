@@ -21,11 +21,12 @@ export function AuthProvider({ children }) {
         }).then((res) => {
             console.log(res.data)
             setReturnMessage("User Created Succesfully")
+            //return "Success"
             //setCurrentUser(res.data)
         }).catch((error) => {
             if (error.response){
                 var msg = error.response.data.message
-                console.log(msg)
+                //console.log(msg)
                 if (msg === "User already exists"){
                     setSignupError("User already exists");
                 } else if (msg === "Username already in use"){

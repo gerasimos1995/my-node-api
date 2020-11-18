@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Form, Button, Card, Alert } from 'react-bootstrap'
 import { useAuth } from '../contexts/AuthContext'
-
+import { Link } from 'react-router-dom'
 
 export default function Login() {
 
@@ -52,7 +52,7 @@ export default function Login() {
                 </Card.Body>
             </Card>
             <div className="w-100 text-center mt-2">
-                Forgot your password? Click here
+                Don't have an account? <Link to="/signup">Register</Link>
             </div>
         </>
     )
