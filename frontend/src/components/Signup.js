@@ -1,9 +1,13 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useContext } from 'react'
 import { Form, Button, Card, Alert } from 'react-bootstrap'
-import { useAuth } from '../contexts/AuthContext'
+import { AuthContext } from '../contexts/AuthContext'
 import { Link, useHistory } from 'react-router-dom'
+import axios from 'axios'
+import jwtDecode from 'jwt-decode'
 
 export default function Signup() {
+
+    const history = useHistory()
 
     const usernameRef = useRef()
     const emailRef = useRef()
@@ -11,12 +15,10 @@ export default function Signup() {
     const passwordConfirmRef = useRef()
     const roleRef = useRef()
 
-    const { signup, signupError, returnMessage } = useAuth()
+    //const { updateStatus } = useContext(AuthContext)
 
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
-
-    const history = useHistory()
 
     async function handleSubmit(e) {
         e.preventDefault() // page doesn't refresh
@@ -28,28 +30,52 @@ export default function Signup() {
         try {
             setError('')
             setLoading(true)
-            const rtrMsg = await signup(usernameRef.current.value, 
-                emailRef.current.value,
-                passwordRef.current.value,
-                roleRef.current.value)
-             
-            //if (rtrMsg && (rtrMsg === "Success")) history.push('/login')
-        } catch (error) {
-            setError('Failed to create an account')
-        }
-        setLoading(false)   
-    }
 
-    useEffect(() => {
-        console.log(signupError);
-        setError(signupError);
-    }, [signupError]);
+            const headers = {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
+            
+            const postData = {
+                username: usernameRef.current.value,
+                password: passwordRef.current.value,
+                email: emailRef.current.value,
+                role: roleRef.current.value
+            }
+
+            const result = await axios.post("http://localhost:3000/api/auth/register", postData, headers)
+            console.log(result)
+            setLoading(false)
+            if (result && (result.status == '201')) history.push('/login')
+        } catch (error) {
+            if (error.response){
+                var msg = error.response.data.message
+                if (msg === "User already exists"){
+                    setError("User already exists");
+                } else if (msg === "Username already in use"){
+                    setError("Username already in use")
+                }else{
+                    // that means that data validation failed so display corresponding error
+                    msg = msg.replace(/\"/g,'')
+                    msg = msg.replace(/"/g,'')
+                    setError(msg)
+                }
+            } else if (error.request){
+                console.log("Did not make the request")
+                setError("Something went wrong with the request")
+            } else {
+                console.log(error)
+                setError("Unexpected error")
+            }
+            setLoading(false)
+        }   
+    }
 
     return (
         <>
             <Card>
                 <Card.Body>
-                    <h2 className="text-center mb-4">Sign Up</h2>
+                    <h2 className="text-center mb-4">Register</h2>
                     {error && <Alert variant="danger">{error}</Alert>}
                     {/* {returnMessage && <Alert variant="success">{returnMessage}</Alert>} */}
                     <Form onSubmit={ handleSubmit }>

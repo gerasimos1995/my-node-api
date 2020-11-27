@@ -1,14 +1,19 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useContext } from 'react'
 import { Form, Button, Card, Alert } from 'react-bootstrap'
-import { useAuth } from '../contexts/AuthContext'
-import { Link } from 'react-router-dom'
+import { AuthContext } from '../contexts/AuthContext'
+import { Link, useHistory } from 'react-router-dom'
+import jwtDecode from 'jwt-decode'
+import axios from 'axios'
 
 export default function Login() {
+    
+    const history = useHistory()
 
     const usernameRef = useRef()
     const passwordRef = useRef()
 
-    const {login, loginError} = useAuth()
+    //, updateLoginStatus, loginStatus
+    const { loginUser } = useContext(AuthContext)
 
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
@@ -19,18 +24,49 @@ export default function Login() {
         try {
             setError('')
             setLoading(true)
-            await login(usernameRef.current.value,
-                passwordRef.current.value)
-        } catch (error) {
-            setError('Failed to login user')
-        }
-        setLoading(false)   
-    }
 
-    useEffect(() => {
-        console.log(loginError);
-        setError(loginError);
-    }, [loginError]);
+            const headers = {
+                'Content-Type': 'application/json'
+                // 'Access-Control-Allow-Origin': '*'
+            }
+            
+            const postData = {
+                username: usernameRef.current.value,
+                password: passwordRef.current.value
+            }
+
+            const result = await axios.post("http://localhost:3000/api/auth/login", postData, headers)
+            console.log("Axios result: ",result.data.AccessToken)
+            var decoded_access = jwtDecode(result.data.AccessToken)
+            console.log(decoded_access)
+            loginUser(decoded_access)
+            localStorage.setItem("Access Token", `Bearer ${result.data.AccessToken}`)
+            setLoading(false) 
+            history.push('/dashboard')
+        } catch (error) {
+            if (error.response){
+                var msg = error.response.data.message
+                console.log(msg)
+                if (msg === "User doesn't exist"){
+                    setError("User doesn't exist");
+                } else if (msg === "Incorrect Password"){
+                    setError("Incorrect Password")
+                }else{
+                    // that means that data validation failed so display corresponding error
+                    msg = msg.replace(/\"/g,'')
+                    msg = msg.replace(/"/g,'')
+                    setError(msg)
+                } 
+            } else if (error.request){
+                console.log("Did not make the request")
+                setError("Something went wrong with the request")
+            } else {
+                console.log(error)
+                setError("Unexpected error")
+            }
+            setLoading(false) 
+        }  
+    }
 
     return (
         <>
@@ -45,7 +81,7 @@ export default function Login() {
                         </Form.Group>
                         <Form.Group id="password">
                             <Form.Label>Password</Form.Label>
-                            <Form.Control type="password" ref={passwordRef} required></Form.Control>
+                            <Form.Control type="password" ref={passwordRef}></Form.Control>
                         </Form.Group>
                         <Button disabled={loading} className="w-100" type="submit">Submit</Button>
                     </Form>
