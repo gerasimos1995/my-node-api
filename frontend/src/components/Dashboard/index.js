@@ -1,17 +1,17 @@
 import React, { useContext, useEffect } from 'react'
 import { AuthContext } from '../../contexts/AuthContext'
+import ProductForm from '../ProductForm'
+import ProductsList from '../ProductsList'
 
 const Dashboard = () => {
 
     const { currentUser } = useContext(AuthContext)
-    useEffect(() => {
-        console.log(currentUser)
-    }, [currentUser])
-
+    
     return (
-        <h1>
-            {JSON.stringify(currentUser)}
-        </h1>
+        <>
+            <ProductForm/>
+            <ProductsList />
+        </>
     )
 }
 

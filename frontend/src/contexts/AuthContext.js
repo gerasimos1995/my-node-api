@@ -5,9 +5,7 @@ const initialState = {
     currentUser: {
         id: null,
         username: null,
-        role: null,
-        iat: null,
-        exp: null
+        role: null
     },
     loginStatus: null,
     signupStatus: null
@@ -27,9 +25,18 @@ export const AuthProvider = ({ children }) => {
             payload: {
                 id: user.id,
                 username: user.username,
-                role: user.role,
-                iat: user.iat,
-                exp: user.exp
+                role: user.role
+            }
+        })
+    }
+
+    function setUser (user) {
+        dispatch({
+            type: 'SET_USER',
+            payload: {
+                id: user.id,
+                username: user.username,
+                role: user.role
             }
         })
     }
@@ -54,14 +61,7 @@ export const AuthProvider = ({ children }) => {
     // }
 
     return (
-        <AuthContext.Provider value={{
-            currentUser: state.currentUser,
-            // loginStatus: state.loginStatus,
-            // signupStatus: state.signupStatus,
-            loginUser
-            // updateLoginStatus,
-            // updateSignupStatus
-        }}>
+        <AuthContext.Provider value={{ currentUser: state.currentUser, loginUser, setUser }}>
             {children}
         </AuthContext.Provider>
     )

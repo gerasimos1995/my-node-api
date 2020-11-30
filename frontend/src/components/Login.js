@@ -26,8 +26,8 @@ export default function Login() {
             setLoading(true)
 
             const headers = {
-                'Content-Type': 'application/json'
-                // 'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             }
             
             const postData = {
@@ -36,9 +36,7 @@ export default function Login() {
             }
 
             const result = await axios.post("http://localhost:3000/api/auth/login", postData, headers)
-            console.log("Axios result: ",result.data.AccessToken)
             var decoded_access = jwtDecode(result.data.AccessToken)
-            console.log(decoded_access)
             loginUser(decoded_access)
             localStorage.setItem("Access Token", `Bearer ${result.data.AccessToken}`)
             setLoading(false) 

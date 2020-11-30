@@ -97,19 +97,21 @@ router.post('/login', async (req, res) => {
 
 // Creating new access token from a valid refresh token
 router.post('/token', async (req, res, next) => {
-    var refreshToken = req.body.refreshToken;
-    if (refreshToken == null) return res.status(401).json({ message: "No refresh token provided"});
+    var accessToken = req.body.accessToken;
+    if (accessToken == null) return res.status(401).json({ message: "No access token provided"});
     
-    var decoded = jwt.decode(refreshToken);
+    const token = accessToken.split(' ')[1];
+    var decoded = jwt.decode(token);
+    console.log(decoded)
     try {
-        // Find if the user provided in the refresh token has an active refresh token in database
+        // Find if the access token provided by user has an active refresh token in database
         const rfrsh_tk = await tokenModel.findOne({ username: decoded.username });
         
         // There is no refresh token in the database for user
         if (!rfrsh_tk) return  res.status(403).json({ message: "There is no refresh token issued to this user"});
 
-        if (rfrsh_tk.token != req.body.refreshToken) return res.status(403)
-                    .json({ message: "The refresh token you provided does not correspond to the one found in database" });
+        // if (rfrsh_tk.token != req.body.refreshToken) return res.status(403)
+        //             .json({ message: "The refresh token you provided does not correspond to the one found in database" });
         // There is a refresh token in db, verify it and then generate a new access token
         jwt.verify(rfrsh_tk.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
             if (err) return res.status(403).json({ message: "Error while verifying refresh token"});

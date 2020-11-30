@@ -1,41 +1,40 @@
-import React, { useContext } from 'react'
+import React, { useContext, useEffect } from 'react'
 import { Nav, NavLink, Bars, NavMenu, NavBtn, NavBtnLink } from './NavbarElements.js'
 import Logo from '../../images/stop-shop.svg'
 import '../../css/App.css'
 import { AuthContext } from '../../contexts/AuthContext'
+import jwtDecode from 'jwt-decode'
 
 const Navbar = () => {
-    const { currentUser } = useContext(AuthContext)
-    // const imgStyle = {
-    //     max-width: "50px",
-    //     max-height: "50px"
-    // }
+    const { currentUser, setUser } = useContext(AuthContext)
+    
+    function setUserInContext(){
+        if ((currentUser.id == null) && (localStorage.getItem('Access Token') != null)){
+            const token = localStorage.getItem('Access Token')
+            const decoded = jwtDecode(token)
+            setUser(decoded)
+        }
+    }
+
+    useEffect(() => {
+        setUserInContext()
+    }, [])
+
     return (
         <>
             <Nav>
                 <NavLink to='/'>
-                    {/* <img src={require('../../images/stop-shop.svg')} alt='logo' /> */}
                     <img src={Logo} alt='logo'/>
                 </NavLink>
-                {/* {currentUser} */}
                 <Bars/>
-                {/* activeStyle */}
                 <NavMenu> 
-                    <NavLink to="/about">
-                        About
-                    </NavLink>
-                    <NavLink to="/services">
-                        Services
-                    </NavLink>
-                    <NavLink to="/contact">
-                        Contact us
-                    </NavLink>
-                    <NavLink to="/signup">
-                        Register
-                    </NavLink>
+                    <NavLink to="/about">About</NavLink>
+                    {currentUser.role == "shop_owner" ? <NavLink to="products_list">Products</NavLink> : <NavLink to="/services">Services</NavLink>}
+                    <NavLink to="/contact">Contact us</NavLink>
+                    <NavLink to="/signup">Register</NavLink>
                 </NavMenu>
                 <NavBtn>
-                    <NavBtnLink to="/login">Log In</NavBtnLink>
+                    {currentUser.id != null ? <NavBtnLink to="/logout">Log Out</NavBtnLink> : <NavBtnLink to="/login">Log In</NavBtnLink>}
                 </NavBtn>
             </Nav>
         </>

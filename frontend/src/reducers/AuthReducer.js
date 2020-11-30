@@ -12,6 +12,15 @@ export default (state, action) => {
                 },
                 loginStatus: null
             }
+        case 'SET_USER': 
+            return {
+                ...state,
+                currentUser: {
+                    id: action.payload.id,
+                    username: action.payload.username,
+                    role: action.payload.role
+                }
+            }
         case 'UPDATE_LOGIN_FAILED':
             console.log("Received2: ", action.payload.message)
             return {
