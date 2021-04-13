@@ -60,7 +60,6 @@ const orders = require('./routes/orders.js');
 app.use('/api/orders', orders);
 
 // Auth0 functionallity
-// Another minor change
 app.get('/', (req, res) => {
     res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Not authorized' );
 });
