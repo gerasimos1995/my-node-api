@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { registerValidator, loginValidator } = require('../util/validators.js');
 const jwt = require('jsonwebtoken');
-const { generateAccessToken, generateRefreshToken, authenticateToken } = require('../util/jwt.js');
+const { generateAccessToken, generateRefreshToken, authenticateToken, refreshTokenValidity } = require('../util/jwt.js');
 
 // Importing the model
 const userModel = require('../models/user.js');
@@ -34,26 +34,31 @@ router.post('/register', async (req, res) => {
             role: req.body.role
         });
 
-        try {
-            const savedUser = await user.save();
-            // Not returning the hashed password as best practise
-            res.status(201).send({
-                id: savedUser._id,
-                username: savedUser.username,
-                email: savedUser.email,
-                role: savedUser.role
-            });
-        } catch (error) {
-            console.log(error);
-            res.status(500).json({ message: "Something went wrong with saving user in database" });
-        }
+        
+        const savedUser = await user.save();
+        // Not returning the hashed password as best practise
+        res.status(201).send({
+            id: savedUser._id,
+            username: savedUser.username,
+            email: savedUser.email,
+            role: savedUser.role
+        });
+
+        // new user so make a refresh token and save it
+        const temp_user = { username: savedUser.username, email: savedUser.email, id: savedUser.id };
+        const refreshToken = generateRefreshToken(temp_user);
+        const refresh_token_db = new tokenModel({
+            token: refreshToken,
+            username: temp_user.username
+        });
+        await refresh_token_db.save();
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: `Error occured while saving user: ${err}` })
+        res.status(500).json({ message: `Error occured while saving user: ${error}` })
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', refreshTokenValidity, async (req, res) => {
     try {
         // Data validation
         const { error } = await loginValidator(req.body);
@@ -67,28 +72,31 @@ router.post('/login', async (req, res) => {
         const validPassword = await bcrypt.compare(req.body.password, user.password);
         if (!validPassword) return res.status(400).json({ message: "Incorrect Password" });
 
-        // Create the serializable object it could be simpler
-        // const nuser = { id: user._id,
-        //                 username: user.username,
-        //                 email: user.email };
+        const valid_refresh = req.refreshToken;
         const temp_user = { username: user.username, role: user.role, id: user._id };
-        const access_token = generateAccessToken(temp_user);
-        const refresh_token = generateRefreshToken(temp_user);
-        if (!access_token || !refresh_token) return res.status(500).json({ message: "Error creating access/refresh tokens" });
+        access_token = generateAccessToken(temp_user);
+
+        // const refreshToken = await tokenModel.findOne({ username: req.body.username });
+        // let verified_user;
+        // jwt.verify(refreshToken.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+        //     if (err){
+        //         console.error("Failed verification of refresh token ");
+        //         return res.status(500).json({ message: "Failed verification of refresh token " });
+        //     }
+        //     console.log(user);
+        //     verified_user = user;
+        // })
+        // let access_token;
+        // if (verified_user){
+        //     const temp_user = { username: user.username, role: user.role, id: user._id };
+        //     access_token = generateAccessToken(temp_user);
+        // }
+
+        //const refresh_token = generateRefreshToken(temp_user);
+        //if (!access_token || !refresh_token) return res.status(500).json({ message: "Error creating access/refresh tokens" });
 
         // Saving the refresh token created in the database along with the username of user
-        try {
-            const refresh_token_db = new tokenModel({
-                token: refresh_token,
-                username: temp_user.username
-            });
-            await refresh_token_db.save();
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Failure saving refresh token" });
-        }
-        res.header('Authorization', `Bearer ${access_token}`)
-            .json({ AccessToken: access_token, RefreshToken: refresh_token });
+        res.header('Authorization', `Bearer ${access_token}`).json({ AccessToken: access_token, RefreshToken: valid_refresh });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: error });

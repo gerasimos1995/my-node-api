@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const tokenModel = require('../models/token');
 
 // Auth Middlware
 exports.authenticateToken = (req, res, next) => {
@@ -14,6 +15,30 @@ exports.authenticateToken = (req, res, next) => {
         req.user = user;
         next();
     });
+}
+
+// Refresh Token validity
+exports.refreshTokenValidity = async (req, res, next) => {
+    try {
+        const username = req.body.username;
+        const rtoken = await tokenModel.findOne({ username });
+
+        jwt.verify(rtoken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+            // this is in case the verification of the refresh token fails
+            if (!user){
+                console.log("Verification of refresh failed issuing a new one");
+                const temp = {username: req.body.username}
+                const refresh_token = this.generateRefreshToken(temp);
+                req.refreshToken = refresh_token;
+                next();
+            }
+            // if there is a valid refresh token just pass it through
+            req.refreshToken = rtoken.token;
+        });
+    } catch(err){
+        console.log(err);
+        return res.status(500).json({ message: "Failed refresh token middleware" });
+    }
 }
 
 // Roles Middleware
@@ -48,7 +73,7 @@ exports.generateAccessToken = (user) => {
 exports.generateRefreshToken = (user) => {
     try {
         // The token returned has all the user's information
-        return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
+        return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1m'});
     } catch (error) {
         console.error(error);
         return null;
