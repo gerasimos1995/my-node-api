@@ -24,6 +24,7 @@ exports.roleAuthentication = (role) => {
         const token = authHeader && authHeader.split(' ')[1];
         var decoded = jwt.decode(token);
         if (!role.includes(decoded.role)){
+            Logger.info("User didn't have permissions for this action");
             return res.status(401).json({ message: "You do not have the permission for this action" });
         }
         next();

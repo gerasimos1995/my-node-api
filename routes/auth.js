@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+
 const bcrypt = require('bcryptjs');
-const { registerValidator, loginValidator } = require('../util/validators.js');
 const jwt = require('jsonwebtoken');
+
+const { registerValidator, loginValidator } = require('../util/validators.js');
 const { generateAccessToken, generateRefreshToken, authenticateToken } = require('../util/jwt.js');
+
 const Logger = require('../util/logger')
 
 // Importing the model

@@ -32,11 +32,9 @@ try {
             useCreateIndex: true
         }, () => {
             Logger.info("Connected to database succesfully")
-             //console.log("Connected to database successfully");
         });
 } catch (error) {
-    Logger.error(error)
-    //console.error("Failed to connect to database: ", error);
+    Logger.error("Failed to connect to database" + error);
 }
 
 
@@ -53,8 +51,8 @@ app.use('/api/products', products);
 const orders = require('./routes/orders.js');
 app.use('/api/orders', orders);
 
+const PORT = "3000";
 
-app.listen(3000, () => {
-    Logger.info("Server up and running on port 3000");
-    //console.log('Server up and running');
+app.listen(PORT, () => {
+    Logger.info("Server up and running on port: " + PORT);
 });
