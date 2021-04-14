@@ -14,15 +14,24 @@ router.post('/register', async (req, res) => {
     try {
         // Data validation
         const { error } = await registerValidator(req.body);
-        if (error) return res.status(400).json({ message: error.details[0].message});
+        if (error) {
+            Logger.info(error);
+            return res.status(400).json({ message: error.details[0].message});
+        }
 
         // Checking if the user is already registered
         const emailExists = await userModel.findOne({ email: req.body.email });
-        if (emailExists) return res.status(400).json({ message: "User already exists"});
+        if (emailExists) {
+            Logger.info("User is already registered");
+            return res.status(400).json({ message: "User already exists"});
+        }
 
         // Checking if username is already in use
         const usernameAlreadyInUse = await userModel.findOne({ username: req.body.username });
-        if (usernameAlreadyInUse) return res.status(400).json({ message: "Username already in use"});
+        if (usernameAlreadyInUse) {
+            Logger.info("Username already in use");
+            return res.status(400).json({ message: "Username already in use"});
+        }
 
         // Encrypting provided password
         var salt = await bcrypt.genSalt(10);
@@ -59,21 +68,21 @@ router.post('/login', async (req, res) => {
         // Data validation
         const { error } = await loginValidator(req.body);
         if (error) {
-            Logger.error(error);
+            Logger.info(error);
             return res.status(400).json({ message: error.details[0].message});
         }
 
         // Checking if the user exists
         const user = await userModel.findOne({ username: req.body.username });
         if (!user) {
-            Logger.error("user doesn't exist");
+            Logger.info("user doesn't exist");
             return res.status(400).json({ message: "User doesn't exist" });
         }
 
         // Checking if the password is correct
         const validPassword = await bcrypt.compare(req.body.password, user.password);
         if (!validPassword) {
-            Logger.error("Password given in login was invalid");
+            Logger.info("Password given in login was invalid");
             return res.status(400).json({ message: "Incorrect Password" });
         }
 
@@ -107,25 +116,45 @@ router.post('/login', async (req, res) => {
 // Creating new access token from a valid refresh token
 router.post('/token', async (req, res, next) => {
     var refreshToken = req.body.refreshToken;
-    if (refreshToken == null) return res.status(401).json({ message: "No refresh token provided"});
-    
-    var decoded = jwt.decode(refreshToken);
+    if (refreshToken == null) {
+        Logger.info("No refresh token provided");
+        return res.status(401).json({ message: "No refresh token provided"});
+    }
+
+    try {
+        var decoded = jwt.decode(refreshToken)
+    } catch (error) {
+        Logger.info("The refresh token provided could not be decoded");
+        return res.status(400).json({ message: "Refresh token provided was invalid" });
+    }
+        
     try {
         // Find if the user provided in the refresh token has an active refresh token in database
         const rfrsh_tk = await tokenModel.findOne({ username: decoded.username });
         
         // There is no refresh token in the database for user
-        if (!rfrsh_tk) return  res.status(403).json({ message: "There is no refresh token issued to this user"});
+        if (!rfrsh_tk) {
+            Logger.error("No refresh token found");
+            return  res.status(403).json({ message: "There is no refresh token issued to this user"});
+        }
 
-        if (rfrsh_tk.token != req.body.refreshToken) return res.status(403)
-                    .json({ message: "The refresh token you provided does not correspond to the one found in database" });
+        if (rfrsh_tk.token != req.body.refreshToken) {
+            Logger.error("Refresh token given doesn't match with the one in db");
+            return res.status(403).json({ message: "The refresh token you provided does not correspond to the one found in database" });
+        }
         // There is a refresh token in db, verify it and then generate a new access token
         jwt.verify(rfrsh_tk.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-            if (err) return res.status(403).json({ message: "Error while verifying refresh token"});
+            if (err) {
+                Logger.error(err)
+                return res.status(403).json({ message: "Error while verifying refresh token"});
+            }
             // User has valid refresh token issued to him so we can create a new access token
             const temp_user = { username: decoded.username, role: decoded.role, id: user.id };
             const accessToken = generateAccessToken(temp_user);
-            if (!accessToken) return res.status(500).json({ message: "Error creating access token" });
+            if (!accessToken) {
+                Logger.error("Error creating access token");
+                return res.status(500).json({ message: "Error creating access token" });
+            }
             return res.status(201).json({ AccessToken: accessToken });
         });
     } catch (error) {
@@ -157,11 +186,9 @@ router.post('/logout', authenticateToken, async (req, res) => {
     try {
         const token = await tokenModel.deleteOne({ username: req.user.username});
         Logger.info(token);
-        //console.log(token);
         res.sendStatus(204);
     } catch (error) {
         Logger.error(error);
-        //console.error(error);
         res.status(400).json({ message: "Could not find a refresh token issued to this user" });
     }
 });
