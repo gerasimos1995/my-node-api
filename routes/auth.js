@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const { registerValidator, loginValidator } = require('../util/validators.js');
 const jwt = require('jsonwebtoken');
 const { generateAccessToken, generateRefreshToken, authenticateToken } = require('../util/jwt.js');
+const Logger = require('../util/logger')
 
 // Importing the model
 const userModel = require('../models/user.js');
@@ -44,11 +45,11 @@ router.post('/register', async (req, res) => {
                 role: savedUser.role
             });
         } catch (error) {
-            console.log(error);
+            Logger.error(error);
             res.status(500).json({ message: "Something went wrong with saving user in database" });
         }
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         res.status(500).json({ message: `Error occured while saving user: ${err}` })
     }
 });
@@ -57,24 +58,32 @@ router.post('/login', async (req, res) => {
     try {
         // Data validation
         const { error } = await loginValidator(req.body);
-        if (error) return res.status(400).json({ message: error.details[0].message});
+        if (error) {
+            Logger.error(error);
+            return res.status(400).json({ message: error.details[0].message});
+        }
 
         // Checking if the user exists
         const user = await userModel.findOne({ username: req.body.username });
-        if (!user) return res.status(400).json({ message: "User doesn't exist" });
+        if (!user) {
+            Logger.error("user doesn't exist");
+            return res.status(400).json({ message: "User doesn't exist" });
+        }
 
         // Checking if the password is correct
         const validPassword = await bcrypt.compare(req.body.password, user.password);
-        if (!validPassword) return res.status(400).json({ message: "Incorrect Password" });
+        if (!validPassword) {
+            Logger.error("Password given in login was invalid");
+            return res.status(400).json({ message: "Incorrect Password" });
+        }
 
-        // Create the serializable object it could be simpler
-        // const nuser = { id: user._id,
-        //                 username: user.username,
-        //                 email: user.email };
         const temp_user = { username: user.username, role: user.role, id: user._id };
         const access_token = generateAccessToken(temp_user);
         const refresh_token = generateRefreshToken(temp_user);
-        if (!access_token || !refresh_token) return res.status(500).json({ message: "Error creating access/refresh tokens" });
+        if (!access_token || !refresh_token) {
+            Logger.error("Error creating access/refresh tokens");
+            return res.status(500).json({ message: "Error creating access/refresh tokens" });
+        }
 
         // Saving the refresh token created in the database along with the username of user
         try {
@@ -84,13 +93,13 @@ router.post('/login', async (req, res) => {
             });
             await refresh_token_db.save();
         } catch (error) {
-            console.error(error);
+            Logger.error(error);
             return res.status(500).json({ message: "Failure saving refresh token" });
         }
         res.header('Authorization', `Bearer ${access_token}`)
             .json({ AccessToken: access_token, RefreshToken: refresh_token });
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         return res.status(500).json({ message: error });
     }
 });
@@ -120,7 +129,7 @@ router.post('/token', async (req, res, next) => {
             return res.status(201).json({ AccessToken: accessToken });
         });
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         if (error.message == "Cannot read property 'username' of null"){ 
             return res.status(400).json({ message: "The provided token didn't match any in the database"});
         } else {
@@ -135,10 +144,10 @@ router.post('/token/disable', async function (req, res, next) {
         
     try {
         const rfrsh_tk = await tokenModel.deleteOne({ token: refreshToken });
-        console.log("Deleted token: ", rfrsh_tk);
+        Logger.info("Deleted token" + rfrsh_tk);
         res.sendStatus(204);
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         return res.sendStatus(500);
     }
 });
@@ -147,10 +156,12 @@ router.post('/token/disable', async function (req, res, next) {
 router.post('/logout', authenticateToken, async (req, res) => {
     try {
         const token = await tokenModel.deleteOne({ username: req.user.username});
-        console.log(token);
+        Logger.info(token);
+        //console.log(token);
         res.sendStatus(204);
     } catch (error) {
-        console.log(error);
+        Logger.error(error);
+        //console.error(error);
         res.status(400).json({ message: "Could not find a refresh token issued to this user" });
     }
 });

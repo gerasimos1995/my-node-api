@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+const Logger = require('./util/logger');
+
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
@@ -24,11 +26,17 @@ app.use(upload.array());  // body-parser for form-data
 dotenv.config();
 try {
     mongoose.connect(process.env.LOCALHOST_DB,
-        { useNewUrlParser: true }, () => {
-             console.log("Connected to database successfully");
+        { 
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            useCreateIndex: true
+        }, () => {
+            Logger.info("Connected to database succesfully")
+             //console.log("Connected to database successfully");
         });
 } catch (error) {
-    console.error("Failed to connect to database: ", error);
+    Logger.error(error)
+    //console.error("Failed to connect to database: ", error);
 }
 
 
@@ -47,5 +55,6 @@ app.use('/api/orders', orders);
 
 
 app.listen(3000, () => {
-    console.log('Server up and running');
+    Logger.info("Server up and running on port 3000");
+    //console.log('Server up and running');
 });
