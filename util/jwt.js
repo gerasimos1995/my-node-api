@@ -78,7 +78,7 @@ exports.roleAuthentication = (role) => {
 exports.generateAccessToken = (user) => {
     try {
         // The token returned has all the user's information
-        return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m'});
+        return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30m'});
     } catch (error) {
         console.error(error);
         return null;
@@ -88,7 +88,7 @@ exports.generateAccessToken = (user) => {
 exports.generateRefreshToken = (user) => {
     try {
         // The token returned has all the user's information
-        return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1m'});
+        return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1y'});
     } catch (error) {
         console.error(error);
         return null;
