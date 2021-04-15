@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const { registerValidator, loginValidator } = require('../util/validators.js');
-const { generateAccessToken, generateRefreshToken, authenticateToken } = require('../util/jwt.js');
+const { generateAccessToken, generateRefreshToken, authenticateToken, refreshTokenValidity } = require('../util/jwt.js');
 
 const Logger = require('../util/logger')
 
@@ -47,26 +47,31 @@ router.post('/register', async (req, res) => {
             role: req.body.role
         });
 
-        try {
-            const savedUser = await user.save();
-            // Not returning the hashed password as best practise
-            res.status(201).send({
-                id: savedUser._id,
-                username: savedUser.username,
-                email: savedUser.email,
-                role: savedUser.role
-            });
-        } catch (error) {
-            Logger.error(error);
-            res.status(500).json({ message: "Something went wrong with saving user in database" });
-        }
+        
+        const savedUser = await user.save();
+        // Not returning the hashed password as best practise
+        res.status(201).send({
+            id: savedUser._id,
+            username: savedUser.username,
+            email: savedUser.email,
+            role: savedUser.role
+        });
+
+        // New user so make a refresh token and persist it
+        const temp_user = { username: savedUser.username };
+        const refreshToken = generateRefreshToken(temp_user);
+        const refresh_token_db = new tokenModel({
+            token: refreshToken,
+            username: temp_user.username
+        });
+        await refresh_token_db.save();
     } catch (error) {
-        Logger.error(error);
-        res.status(500).json({ message: `Error occured while saving user: ${err}` })
+        console.error(error);
+        res.status(500).json({ message: `Error occured while saving user: ${error}` })
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', refreshTokenValidity, async (req, res) => {
     try {
         // Data validation
         const { error } = await loginValidator(req.body);
@@ -89,27 +94,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: "Incorrect Password" });
         }
 
+        // Get the valid refresh token from middleware
+        // Issue a new access token
+        const valid_refresh = req.refreshToken;
         const temp_user = { username: user.username, role: user.role, id: user._id };
-        const access_token = generateAccessToken(temp_user);
-        const refresh_token = generateRefreshToken(temp_user);
-        if (!access_token || !refresh_token) {
-            Logger.error("Error creating access/refresh tokens");
-            return res.status(500).json({ message: "Error creating access/refresh tokens" });
-        }
+        access_token = generateAccessToken(temp_user);
 
         // Saving the refresh token created in the database along with the username of user
-        try {
-            const refresh_token_db = new tokenModel({
-                token: refresh_token,
-                username: temp_user.username
-            });
-            await refresh_token_db.save();
-        } catch (error) {
-            Logger.error(error);
-            return res.status(500).json({ message: "Failure saving refresh token" });
-        }
-        res.header('Authorization', `Bearer ${access_token}`)
-            .json({ AccessToken: access_token, RefreshToken: refresh_token });
+        res.header('Authorization', `Bearer ${access_token}`).json({ AccessToken: access_token, RefreshToken: valid_refresh });
     } catch (error) {
         Logger.error(error);
         return res.status(500).json({ message: error });
