@@ -1,15 +1,19 @@
 const { ROLES } = require("../models/role");
 const orderModel = require("../models/order.js");
-    
+const Logger = require('../util/logger');
+
 async function getSpecificOrder(req, res , next){
     const order_id = req.params.id;
     try {
         const data = await orderModel.findOne({ _id : order_id });
-        if (!data) return res.status(400).json({ message: "Order was not found" });
+        if (!data) {
+            Logger.info("Order was not found");
+            return res.status(400).json({ message: "Order was not found" });
+        }
         req.order = data;
         next();
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         // That occurs if the id given has wrong length (most likely)
         return res.status(500).json({ message: error.message });
     }
@@ -17,15 +21,15 @@ async function getSpecificOrder(req, res , next){
 
 function authGetOrder(req, res, next){
     if (!canViewOrder(req.user, req.order)) {
-        res.status(401);
-        return res.send("Not allowed to view this order");
+        Logger.info("User not allowed to view specific order");
+        return res.status(401).json({ message: "Not allowed to view this order"});
     }
     next();
 }
 
 function canViewOrder(user, order){
-    console.log("User: ", user);
-    console.log("Order: ", order);
+    //console.log("User: ", user);
+    //console.log("Order: ", order);
     return (
        user.role === ROLES.ADMIN || 
        order.client == user.id
@@ -35,8 +39,8 @@ function canViewOrder(user, order){
 function scopedOrders(user, orders) {
     return new Promise((resolve, reject) => {
         const filtered_orders = orders.filter(order => order.client == user.id );
-        
-        console.log("Filtered orders: ", filtered_orders);
+        Logger.info(filtered_orders);
+
         //if (!filtered_orders) reject(null);
         resolve(filtered_orders);
     });

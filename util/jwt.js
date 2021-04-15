@@ -1,15 +1,15 @@
+const Logger = require('./logger');
 const jwt = require('jsonwebtoken');
 const tokenModel = require('../models/token');
 
 // Auth Middlware
 exports.authenticateToken = (req, res, next) => {
-    //console.log("Hey i am in the auth middleware");
     const authHeader = req.headers['authorization'];
     
     const token = authHeader && authHeader.split(' ')[1];
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
         if (err) {
-            console.log("Error while verifying token provided: ", err.message);
+            Logger.error("Error while verifying token: ", err.message);
             return res.sendStatus(403);
         }
         req.user = user;
@@ -60,14 +60,12 @@ exports.refreshTokenValidity = async (req, res, next) => {
 // Roles Middleware
 exports.roleAuthentication = (role) => {
     return (req, res, next) => {
-        //console.log("Hey i am in the role middleware");
-        //console.log("Role required: ", role);
         const authHeader = req.headers['authorization'];
     
         const token = authHeader && authHeader.split(' ')[1];
         var decoded = jwt.decode(token);
-        //console.log("Role of user: ", decoded.role);
         if (!role.includes(decoded.role)){
+            Logger.info("User didn't have permissions for this action");
             return res.status(401).json({ message: "You do not have the permission for this action" });
         }
         next();
