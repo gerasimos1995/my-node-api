@@ -21,19 +21,35 @@ exports.authenticateToken = (req, res, next) => {
 exports.refreshTokenValidity = async (req, res, next) => {
     try {
         const username = req.body.username;
-        const rtoken = await tokenModel.findOne({ username });
-
-        jwt.verify(rtoken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-            // this is in case the verification of the refresh token fails
-            if (!user){
-                console.log("Verification of refresh failed issuing a new one");
-                const temp = {username: req.body.username}
-                const refresh_token = this.generateRefreshToken(temp);
-                req.refreshToken = refresh_token;
+        const db_token = await tokenModel.findOne({ username });
+        
+        // Get token attribute of database token object and verify it
+        jwt.verify(db_token.token, process.env.REFRESH_TOKEN_SECRET, async (err, user) => {
+            if (user){
+                // If there is a valid refresh token just pass it through
+                req.refreshToken = db_token.token;
                 next();
             }
-            // if there is a valid refresh token just pass it through
-            req.refreshToken = rtoken.token;
+            // This is in case the verification of the refresh token fails
+            if (err){
+                console.log(JSON.stringify(err));
+                if (err.message == "jwt expired"){
+                    // Refresh token is valid but expired
+                    console.log("Refresh token expired. Issue a new one");
+                    const temp = {username: req.body.username}
+                    const refresh_token = this.generateRefreshToken(temp);
+    
+                    // Persist the new token by updating the existing one
+                    db_token.token = refresh_token;
+                    await db_token.save();
+    
+                    req.refreshToken = refresh_token;
+                    next();
+                }else if (err.message == "invalid signature"){
+                    // Refresh token is invalid
+                    return res.status(400).json({ message: "Refresh token provided had invalid signature. Contact administrator "});
+                }
+            }
         });
     } catch(err){
         console.log(err);
@@ -66,7 +82,6 @@ exports.generateAccessToken = (user) => {
     } catch (error) {
         console.error(error);
         return null;
-        //return res.status(500).json({ error: error });
     }   
 }
 
@@ -77,6 +92,5 @@ exports.generateRefreshToken = (user) => {
     } catch (error) {
         console.error(error);
         return null;
-        //return res.status(500).json({ error: error });
     }   
 }

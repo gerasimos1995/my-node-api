@@ -44,8 +44,8 @@ router.post('/register', async (req, res) => {
             role: savedUser.role
         });
 
-        // new user so make a refresh token and save it
-        const temp_user = { username: savedUser.username, email: savedUser.email, id: savedUser.id };
+        // New user so make a refresh token and persist it
+        const temp_user = { username: savedUser.username };
         const refreshToken = generateRefreshToken(temp_user);
         const refresh_token_db = new tokenModel({
             token: refreshToken,
@@ -72,28 +72,11 @@ router.post('/login', refreshTokenValidity, async (req, res) => {
         const validPassword = await bcrypt.compare(req.body.password, user.password);
         if (!validPassword) return res.status(400).json({ message: "Incorrect Password" });
 
+        // Get the valid refresh token from middleware
+        // Issue a new access token
         const valid_refresh = req.refreshToken;
         const temp_user = { username: user.username, role: user.role, id: user._id };
         access_token = generateAccessToken(temp_user);
-
-        // const refreshToken = await tokenModel.findOne({ username: req.body.username });
-        // let verified_user;
-        // jwt.verify(refreshToken.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-        //     if (err){
-        //         console.error("Failed verification of refresh token ");
-        //         return res.status(500).json({ message: "Failed verification of refresh token " });
-        //     }
-        //     console.log(user);
-        //     verified_user = user;
-        // })
-        // let access_token;
-        // if (verified_user){
-        //     const temp_user = { username: user.username, role: user.role, id: user._id };
-        //     access_token = generateAccessToken(temp_user);
-        // }
-
-        //const refresh_token = generateRefreshToken(temp_user);
-        //if (!access_token || !refresh_token) return res.status(500).json({ message: "Error creating access/refresh tokens" });
 
         // Saving the refresh token created in the database along with the username of user
         res.header('Authorization', `Bearer ${access_token}`).json({ AccessToken: access_token, RefreshToken: valid_refresh });
