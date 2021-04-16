@@ -2,10 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+const { db_connect } = require('./db_connection');
 const Logger = require('./util/logger');
 
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+//const mongoose = require('mongoose');
+//const dotenv = require('dotenv');
+db_connect();
 
 // Middlewares
 // app.use((req, res, next) => {
@@ -22,20 +24,7 @@ var multer = require('multer');
 var upload = multer();
 app.use(upload.array());  // body-parser for form-data
 
-// Connection to db
-dotenv.config();
-try {
-    mongoose.connect(process.env.LOCALHOST_DB,
-        { 
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useCreateIndex: true
-        }, () => {
-            Logger.info("Connected to database succesfully")
-        });
-} catch (error) {
-    Logger.error("Failed to connect to database" + error);
-}
+
 
 
 // Route middlewares
