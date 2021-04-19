@@ -38,8 +38,8 @@ router.get('/:id', authenticateToken, roleAuthentication([ROLES.SHOP_OWNER, ROLE
         return res.status(500).json({ message: error.message });
     }
 });
-// authenticateToken, roleAuthentication(ROLES.SHOP_OWNER),
-router.post('/',  async (req, res) => {
+
+router.post('/',authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async (req, res) => {
     // Checking if the provided product has the appropriate information
     const { error } = productValidator(req.body);
     if (error) {
@@ -52,9 +52,10 @@ router.post('/',  async (req, res) => {
             category: req.body.category,
             title: req.body.title,
             price: req.body.price,
-            provider: req.body.provider
+            provider: req.body.provider,
+            trader: req.user.id
         });
-        // ,trader: req.user.id
+        
         const data = await product.save();
         if (!data) {
             Logger.info("Failure saving the product");
