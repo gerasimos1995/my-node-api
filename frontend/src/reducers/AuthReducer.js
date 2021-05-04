@@ -10,7 +10,7 @@ const AuthReducer = (state, action) => {
           iat: action.payload.iat,
           exp: action.payload.exp,
         },
-        loginStatus: null,
+        loginStatus: "SUCCESS",
       };
     case "SET_USER":
       return {

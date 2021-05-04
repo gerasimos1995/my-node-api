@@ -22,7 +22,9 @@ exports.refreshTokenValidity = async (req, res, next) => {
   try {
     const username = req.body.username;
     const db_token = await tokenModel.findOne({ username });
-
+    if (!db_token) {
+      return res.status(400).json({ message: "User doesn't exist" });
+    }
     // Get token attribute of database token object and verify it
     jwt.verify(
       db_token.token,
@@ -50,12 +52,10 @@ exports.refreshTokenValidity = async (req, res, next) => {
             next();
           } else if (err.message == "invalid signature") {
             // Refresh token is invalid
-            return res
-              .status(400)
-              .json({
-                message:
-                  "Refresh token provided had invalid signature. Contact administrator ",
-              });
+            return res.status(400).json({
+              message:
+                "Refresh token provided had invalid signature. Contact administrator ",
+            });
           }
         }
       }

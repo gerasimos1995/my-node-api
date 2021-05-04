@@ -39,9 +39,18 @@ export default function Login() {
         postData,
         headers
       );
+      //console.log("Login attempt: ", result);
+
       var decoded_access = jwtDecode(result.data.AccessToken);
       loginUser(decoded_access);
+
       localStorage.setItem("Access Token", `Bearer ${result.data.AccessToken}`);
+
+      localStorage.setItem(
+        "Refresh Token",
+        `Bearer ${result.data.RefreshToken}`
+      );
+
       setLoading(false);
       history.push("/dashboard");
     } catch (error) {
@@ -54,8 +63,6 @@ export default function Login() {
           setError("Incorrect Password");
         } else {
           // that means that data validation failed so display corresponding error
-          //msg = msg.replace(/\"/g, "");
-          msg = msg.replace(/"/g, "");
           setError(msg);
         }
       } else if (error.request) {
@@ -86,7 +93,11 @@ export default function Login() {
             </Form.Group>
             <Form.Group id="password">
               <Form.Label>Password</Form.Label>
-              <Form.Control type="password" ref={passwordRef}></Form.Control>
+              <Form.Control
+                type="password"
+                ref={passwordRef}
+                required
+              ></Form.Control>
             </Form.Group>
             <Button disabled={loading} className="w-100" type="submit">
               Submit

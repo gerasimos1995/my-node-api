@@ -55,8 +55,6 @@ export default function Signup() {
           setError("Username already in use");
         } else {
           // that means that data validation failed so display corresponding error
-          //msg = msg.replace(/\"/g, "");
-          msg = msg.replace(/"/g, "");
           setError(msg);
         }
       } else if (error.request) {

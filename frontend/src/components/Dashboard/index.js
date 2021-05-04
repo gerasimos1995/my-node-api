@@ -4,14 +4,22 @@ import ProductForm from "../ProductForm";
 import ProductsList from "../ProductsList";
 
 const Dashboard = () => {
-  const { currentUser } = useContext(AuthContext);
+  const {
+    currentUser: { id: id, role: role, username: username },
+  } = useContext(AuthContext);
 
-  console.log(currentUser);
+  console.log("current user: ", id, role, username);
 
   return (
     <>
-      <ProductForm />
-      <ProductsList />
+      {role === "shop_owner" ? (
+        <>
+          <ProductForm />
+          <ProductsList />
+        </>
+      ) : (
+        <h2>Ho</h2>
+      )}
     </>
   );
 };
