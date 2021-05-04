@@ -12,15 +12,14 @@ const AuthReducer = (state, action) => {
         },
         loginStatus: "SUCCESS",
       };
+
     case "SET_USER":
       return {
         ...state,
-        currentUser: {
-          id: action.payload.id,
-          username: action.payload.username,
-          role: action.payload.role,
-        },
+        currentUser: { ...action.payload },
+        loginStatus: "SUCCESS",
       };
+
     case "UPDATE_LOGIN_FAILED":
       console.log("Received2: ", action.payload.message);
       return {
@@ -34,6 +33,7 @@ const AuthReducer = (state, action) => {
         },
         loginStatus: action.payload.message,
       };
+
     case "UPDATE_SIGNUP_FAILED":
       return {
         ...state,
@@ -46,15 +46,9 @@ const AuthReducer = (state, action) => {
         },
         signupStatus: action.payload.message,
       };
+
     default:
       return state;
   }
 };
 export default AuthReducer;
-// currentUser: {
-//     id: null,
-//     username: null,
-//     role: null,
-//     iat: null,
-//     exp: null
-// }

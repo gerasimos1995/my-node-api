@@ -15,16 +15,17 @@ import jwtDecode from "jwt-decode";
 const Navbar = () => {
   const { currentUser, setUser } = useContext(AuthContext);
 
-  function setUserInContext() {
+  const setUserInContext = () => {
     if (
       currentUser.id == null &&
       localStorage.getItem("Access Token") != null
     ) {
       const token = localStorage.getItem("Access Token");
       const decoded = jwtDecode(token);
+      console.log(decoded);
       setUser(decoded);
     }
-  }
+  };
 
   useEffect(() => {
     setUserInContext();

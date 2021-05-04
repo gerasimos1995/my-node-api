@@ -36,11 +36,7 @@ export const AuthProvider = ({ children }) => {
   function setUser(user) {
     dispatch({
       type: "SET_USER",
-      payload: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-      },
+      payload: { ...user },
     });
   }
 

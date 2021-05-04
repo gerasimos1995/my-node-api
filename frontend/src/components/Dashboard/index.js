@@ -5,10 +5,10 @@ import ProductsList from "../ProductsList";
 
 const Dashboard = () => {
   const {
-    currentUser: { id: id, role: role, username: username },
+    currentUser: { id, role, username, iat, exp },
   } = useContext(AuthContext);
 
-  console.log("current user: ", id, role, username);
+  console.log("current user: ", id, role, username, iat, exp);
 
   return (
     <>
