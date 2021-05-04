@@ -1,6 +1,7 @@
 const { ROLES } = require('../models/role.js');
 const productModel = require('../models/product.js');
 const product = require('../models/product.js');
+const Logger = require('../util/logger');
 
 async function getProducts(req, res, next) {
     try {
@@ -20,7 +21,8 @@ async function getProducts(req, res, next) {
         req.products = data;
         next();
     } catch (error) {
-        console.error(error);
+        //console.error(error);
+        Logger.error(error);
         return res.status(500).json({ message: error.message });
     }
 }
@@ -28,8 +30,8 @@ async function getProducts(req, res, next) {
 function scopedProducts(user, products) {
     return new Promise((resolve, reject) => {
         const filtered_products = products.filter(product => product.trader == user.id );
-        
-        console.log("Filtered products: ", filtered_products);
+        Logger.info(filtered_products);
+        //console.log("Filtered products: ", filtered_products);
         //if (!filtered_products) reject(null);
         resolve(filtered_products);
     });

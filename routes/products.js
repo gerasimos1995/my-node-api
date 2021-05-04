@@ -5,6 +5,7 @@ const { authenticateToken, roleAuthentication } = require('../util/jwt.js');
 const { paginatedResults } = require('../util/pagination.js');
 
 const { productValidator } = require('../util/validators.js');
+const Logger = require('../util/logger');
 
 const productModel = require('../models/product.js');
 const { ROLES } = require('../models/role.js');
@@ -26,20 +27,25 @@ router.get('/:id', authenticateToken, roleAuthentication([ROLES.SHOP_OWNER, ROLE
 
     try {
         const data = await productModel.findOne({ _id : product_id });
-        if (!data) return res.status(400).json({ message: "Product was not found" });
+        if (!data) {
+            Logger.info("Product was not found");
+            return res.status(400).json({ message: "Product was not found" });
+        }
         return res.status(200).json({ product: data });
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         // That occurs if the id given has wrong length (most likely)
         return res.status(500).json({ message: error.message });
     }
 });
 
-router.post('/', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async (req, res) => {
+router.post('/',authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async (req, res) => {
     // Checking if the provided product has the appropriate information
     const { error } = productValidator(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
-
+    if (error) {
+        Logger.info(error);
+        return res.status(400).json({ message: error.details[0].message });
+    }
     try {
         // Creating a new product to save in the database
         const product = new productModel({
@@ -49,13 +55,16 @@ router.post('/', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async 
             provider: req.body.provider,
             trader: req.user.id
         });
-
+        
         const data = await product.save();
-        if (!data) return res.status(400).json({ message: "Failed saving the product" });
+        if (!data) {
+            Logger.info("Failure saving the product");
+            return res.status(400).json({ message: "Failed saving the product" });
+        }
 
         return res.status(201).json({ product: data });
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         return res.status(500).json({ message: error.message });
     }
 });
@@ -63,12 +72,18 @@ router.post('/', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async 
 router.patch('/:id', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), async (req, res) => {
     // Checking if the provided product has the appropriate information
     const { error } = productValidator(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
+    if (error) {
+        Logger.info(error)
+        return res.status(400).json({ message: error.details[0].message });
+    }
 
     // Checking if the requested product for update exists in database
     const product_id = req.params.id;
     const product = await productModel.findOne({ _id : product_id });
-    if (!product) return res.status(400).json({ message: "Product was not found" });
+    if (!product) {
+        Logger.info("Product was not found");
+        return res.status(400).json({ message: "Product was not found" });
+    }
 
     try {
         product.category = req.body.category;
@@ -77,10 +92,13 @@ router.patch('/:id', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), as
         product.provider = req.body.provider;
         const updated_product = await product.save();
 
-        if (!updated_product) return res.status(500).json({ message: "Something went wrong updating the product" });
+        if (!updated_product) {
+            Logger.error("Something went wrong updating the product");
+            return res.status(500).json({ message: "Something went wrong updating the product" });
+        }
         return res.status(200).json({ product: updated_product });
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         return res.status(500).json({ message: "There was a server error" });
     }
 });
@@ -89,15 +107,21 @@ router.delete('/:id', authenticateToken, roleAuthentication(ROLES.SHOP_OWNER), a
     // Checking if the requested product for update exists in database
     const product_id = req.params.id;
     const product = await productModel.findOne({ _id : product_id });
-    if (!product) return res.status(400).json({ message: "Product was not found" });
+    if (!product) {
+        Logger.info("Product was not found");
+        return res.status(400).json({ message: "Product was not found" });
+    }
 
     try {
         const data = await product.deleteOne({ _id: product_id });
-        if (!data) return res.status(500).json({ message: "Something went wrong during deletion of product" });
+        if (!data) {
+            Logger.error("Something went wrong during deletion of product");
+            return res.status(500).json({ message: "Something went wrong during deletion of product" });
+        }
 
         return res.status(200).json({ message: "Product deleted successfully" });
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         return res.status(500).json({ error: error.message });
     }
 });

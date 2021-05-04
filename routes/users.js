@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 
 const { authenticateToken, roleAuthentication } = require('../util/jwt.js');
+const Logger = require('../util/logger');
 
 // Importing the model
 const userModel = require('../models/user.js');
 const { ROLES } = require('../models/role.js');
+const { loggers } = require('winston');
 
 // Create new user entry
 router.post('/', authenticateToken, roleAuthentication([ROLES.SUPERADMIN, ROLES.ADMIN]), async (req, res) => {
@@ -20,7 +22,7 @@ router.post('/', authenticateToken, roleAuthentication([ROLES.SUPERADMIN, ROLES.
         const savedUser = await user.save();
         return res.status(201).send(savedUser);
     } catch (error) {
-        console.error(error.message);
+        Logger.error(error.message);
         return res.status(400).json({ message: error.message });
     }
 });
@@ -31,7 +33,7 @@ router.get('/', authenticateToken, roleAuthentication([ROLES.SUPERADMIN, ROLES.A
         const data = await userModel.find();
         return res.status(200).send(data);
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         return res.status(400).json({ message: "Something went wrong" });
     }
 });
@@ -50,7 +52,7 @@ router.get('/me', authenticateToken, async (req, res) => {
             age: data.age
         });
     } catch (error) {
-        console.error(error);
+        Logger.error(error);
         res.status(400).json({ message: error });
     }
 });
@@ -68,7 +70,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             email: user.email
         });
     } catch (error) {
-        console.log(error);
+        Logger.log(error);
         res.status(500).json({ message: error });
     }
 });
