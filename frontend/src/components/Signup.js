@@ -45,7 +45,7 @@ export default function Signup() {
       );
       console.log(result);
       setLoading(false);
-      if (result && result.status === "201") history.push("/login");
+      if (result && result.status === parseInt("201")) history.push("/login");
     } catch (error) {
       if (error.response) {
         var msg = error.response.data.message;
