@@ -1,18 +1,19 @@
-import React, { useContext, useEffect } from 'react'
-import { AuthContext } from '../../contexts/AuthContext'
-import ProductForm from '../ProductForm'
-import ProductsList from '../ProductsList'
+import React, { useContext } from "react";
+import { AuthContext } from "../../contexts/AuthContext";
+import ProductForm from "../ProductForm";
+import ProductsList from "../ProductsList";
 
 const Dashboard = () => {
+  const { currentUser } = useContext(AuthContext);
 
-    const { currentUser } = useContext(AuthContext)
-    
-    return (
-        <>
-            <ProductForm/>
-            <ProductsList />
-        </>
-    )
-}
+  console.log(currentUser);
 
-export default Dashboard
+  return (
+    <>
+      <ProductForm />
+      <ProductsList />
+    </>
+  );
+};
+
+export default Dashboard;
