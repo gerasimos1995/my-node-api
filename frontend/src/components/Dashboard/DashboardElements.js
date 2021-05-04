@@ -27,8 +27,8 @@ export const DashboardWrapper = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  grid-gap: 5rem;
-  padding: 0 50px;
+  grid-gap: 4rem;
+  padding: 0 10px;
 
   @media screen and (max-width: 1000px) {
     grid-template-columns: 1fr 1fr;
@@ -48,13 +48,13 @@ export const DashboardItem = styled.div`
   align-items: center;
   border-radius: 15px;
   padding: 30px;
-  transition: all 0.8s ease-in-out;
+  transition: all 1s ease-in-out;
   min-height: 300px;
   max-height: 300px;
   z-index: 1;
 
   &:hover {
-    transform: scale(1.15);
+    transform: scale(1.1);
     transition: all 0.2s ease-in-out;
     cursor: pointer;
     box-shadow: 0 0 35px rgba(60, 165, 113);
