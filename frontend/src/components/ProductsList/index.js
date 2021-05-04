@@ -42,7 +42,7 @@ const ProductsList = () => {
         addProducts(result.data.products);
       }
     } catch (error) {
-      console.log(error);
+      console.log(error.message);
     }
   };
 
