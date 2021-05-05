@@ -12,7 +12,6 @@ const initialState = {
   loginStatus: null,
   signupStatus: null,
 };
-// }username: "test2", role: "client", id: "5fb51fdf20fbf54b48c725d4", iat: 1606345626, exp: 1606345686
 
 export const AuthContext = React.createContext(initialState);
 
@@ -40,28 +39,15 @@ export const AuthProvider = ({ children }) => {
     });
   }
 
-  // function updateLoginStatus (status) {
-  //     console.log("Received: ", status)
-  //     dispatch({
-  //         type: 'UPDATE_LOGIN_FAILED',
-  //         payload: {
-  //             message: status
-  //         }
-  //     })
-  // }
-
-  // function updateSignupStatus (status) {
-  //     dispatch({
-  //         type: 'UPDATE_STATUS_FAILED',
-  //         payload: {
-  //             message: status
-  //         }
-  //     })
-  // }
+  const logoutUser = () => {
+    dispatch({
+      type: "LOGOUT_USER",
+    });
+  };
 
   return (
     <AuthContext.Provider
-      value={{ currentUser: state.currentUser, loginUser, setUser }}
+      value={{ currentUser: state.currentUser, loginUser, setUser, logoutUser }}
     >
       {children}
     </AuthContext.Provider>

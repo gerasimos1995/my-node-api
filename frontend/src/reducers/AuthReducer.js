@@ -20,6 +20,19 @@ const AuthReducer = (state, action) => {
         loginStatus: "SUCCESS",
       };
 
+    case "LOGOUT_USER":
+      return {
+        ...state,
+        currentUser: {
+          id: null,
+          username: null,
+          role: null,
+          iat: null,
+          exp: null,
+        },
+        loginStatus: "LOGGED_OUT",
+      };
+
     case "UPDATE_LOGIN_FAILED":
       console.log("Received2: ", action.payload.message);
       return {
