@@ -6,10 +6,11 @@ import { AuthContext } from "../../contexts/AuthContext";
 import {
   Nav,
   NavLink,
-  Bars,
   NavMenu,
+  Bars,
   NavBtn,
   NavBtnLink,
+  NavBtnLink2,
 } from "./NavbarElements.js";
 
 import Logo from "../../images/stop-shop.svg";
@@ -39,11 +40,13 @@ const Navbar = () => {
   return (
     <>
       <Nav>
-        <NavLink to="/">
+        <NavBtnLink2 to="/">
           <img src={Logo} alt="logo" />
-        </NavLink>
+        </NavBtnLink2>
         <Bars />
         <NavMenu>
+          <NavLink to="/about">About</NavLink>
+          <NavLink to="/about">About</NavLink>
           <NavLink to="/about">About</NavLink>
           {currentUser.role === "shop_owner" ? (
             <NavLink to="products_list">Products</NavLink>
